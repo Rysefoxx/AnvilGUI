@@ -1,15 +1,6 @@
 package net.wesjd.anvilgui;
 
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import net.wesjd.anvilgui.version.VersionMatcher;
 import net.wesjd.anvilgui.version.VersionWrapper;
 import org.apache.commons.lang.Validate;
@@ -24,6 +15,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
+
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * An anvil gui, used for gathering a user's input
@@ -84,11 +81,13 @@ public class AnvilGUI {
     /**
      * An {@link Consumer} that is called when the {@link Slot#INPUT_LEFT} slot has been clicked
      */
-    private final Consumer<Player> inputLeftClickListener;
+//    private final Consumer<Player> inputLeftClickListener;
+    private final BiConsumer<Player, InventoryClickEvent> inputLeftClickListener;
     /**
      * An {@link Consumer} that is called when the {@link Slot#INPUT_RIGHT} slot has been clicked
      */
-    private final Consumer<Player> inputRightClickListener;
+//    private final Consumer<Player> inputRightClickListener;
+    private final BiConsumer<Player, InventoryClickEvent> inputRightClickListener;
 
     /**
      * The container id of the inventory, used for NMS methods
@@ -128,8 +127,8 @@ public class AnvilGUI {
             boolean preventClose,
             Set<Integer> interactableSlots,
             Consumer<Player> closeListener,
-            Consumer<Player> inputLeftClickListener,
-            Consumer<Player> inputRightClickListener,
+            BiConsumer<Player, InventoryClickEvent> inputLeftClickListener,
+            BiConsumer<Player, InventoryClickEvent> inputRightClickListener,
             Function<Completion, List<ResponseAction>> completeFunction) {
         this.plugin = plugin;
         this.player = player;
@@ -255,11 +254,11 @@ public class AnvilGUI {
                     }
                 } else if (event.getRawSlot() == Slot.INPUT_LEFT) {
                     if (inputLeftClickListener != null) {
-                        inputLeftClickListener.accept(player);
+                        inputLeftClickListener.accept(player, event);
                     }
                 } else if (event.getRawSlot() == Slot.INPUT_RIGHT) {
                     if (inputRightClickListener != null) {
-                        inputRightClickListener.accept(player);
+                        inputRightClickListener.accept(player, event);
                     }
                 }
             }
@@ -320,11 +319,13 @@ public class AnvilGUI {
         /**
          * An {@link Consumer} that is called when the {@link Slot#INPUT_LEFT} slot has been clicked
          */
-        private Consumer<Player> inputLeftClickListener;
+//        private Consumer<Player> inputLeftClickListener;
+        private BiConsumer<Player, InventoryClickEvent> inputLeftClickListener;
         /**
          * An {@link Consumer} that is called when the {@link Slot#INPUT_RIGHT} slot has been clicked
          */
-        private Consumer<Player> inputRightClickListener;
+//        private Consumer<Player> inputRightClickListener;
+        private BiConsumer<Player, InventoryClickEvent> inputRightClickListener;
         /**
          * An {@link Function} that is called when the anvil output slot has been clicked
          */
@@ -399,7 +400,7 @@ public class AnvilGUI {
          * @param inputLeftClickListener An {@link Consumer} that is called when the first input slot is clicked
          * @return The {@link Builder} instance
          */
-        public Builder onLeftInputClick(Consumer<Player> inputLeftClickListener) {
+        public Builder onLeftInputClick(BiConsumer<Player, InventoryClickEvent> inputLeftClickListener) {
             this.inputLeftClickListener = inputLeftClickListener;
             return this;
         }
@@ -410,7 +411,7 @@ public class AnvilGUI {
          * @param inputRightClickListener An {@link Consumer} that is called when the second input slot is clicked
          * @return The {@link Builder} instance
          */
-        public Builder onRightInputClick(Consumer<Player> inputRightClickListener) {
+        public Builder onRightInputClick(BiConsumer<Player, InventoryClickEvent> inputRightClickListener) {
             this.inputRightClickListener = inputRightClickListener;
             return this;
         }
@@ -559,7 +560,7 @@ public class AnvilGUI {
                     plugin,
                     player,
                     title,
-                    new ItemStack[] {itemLeft, itemRight, itemOutput},
+                    new ItemStack[]{itemLeft, itemRight, itemOutput},
                     preventClose,
                     interactableSlots,
                     closeListener,
@@ -569,12 +570,15 @@ public class AnvilGUI {
         }
     }
 
-    /** An action to run in response to a player clicking the output slot in the GUI. This interface is public
-     * and permits you, the developer, to add additional response features easily to your custom AnvilGUIs. */
+    /**
+     * An action to run in response to a player clicking the output slot in the GUI. This interface is public
+     * and permits you, the developer, to add additional response features easily to your custom AnvilGUIs.
+     */
     public interface ResponseAction extends BiConsumer<AnvilGUI, Player> {
 
         /**
          * Replace the input text box value with the provided text value
+         *
          * @param text The text to write in the input box
          * @return The {@link ResponseAction} to achieve the text replacement
          */
@@ -591,6 +595,7 @@ public class AnvilGUI {
 
         /**
          * Open another inventory
+         *
          * @param otherInventory The inventory to open
          * @return The {@link ResponseAction} to achieve the inventory open
          */
@@ -600,6 +605,7 @@ public class AnvilGUI {
 
         /**
          * Close the AnvilGUI
+         *
          * @return The {@link ResponseAction} to achieve closing the AnvilGUI
          */
         static ResponseAction close() {
@@ -608,6 +614,7 @@ public class AnvilGUI {
 
         /**
          * Run the provided runnable
+         *
          * @param runnable The runnable to run
          * @return The {@link ResponseAction} to achieve running the runnable
          */
@@ -618,12 +625,14 @@ public class AnvilGUI {
 
     /**
      * Represents a response when the player clicks the output item in the anvil GUI
+     *
      * @deprecated Since 1.6.2, use {@link ResponseAction}
      */
     @Deprecated
     public static class Response {
         /**
          * Returns an {@link Response} object for when the anvil GUI is to close
+         *
          * @return An {@link Response} object for when the anvil GUI is to display text to the user
          * @deprecated Since 1.6.2, use {@link ResponseAction#close()}
          */
@@ -659,7 +668,7 @@ public class AnvilGUI {
      */
     public static class Slot {
 
-        private static final int[] values = new int[] {Slot.INPUT_LEFT, Slot.INPUT_RIGHT, Slot.OUTPUT};
+        private static final int[] values = new int[]{Slot.INPUT_LEFT, Slot.INPUT_RIGHT, Slot.OUTPUT};
 
         /**
          * The slot on the far left, where the first input is inserted. An {@link ItemStack} is always inserted
@@ -708,11 +717,12 @@ public class AnvilGUI {
 
         /**
          * The event parameter constructor
-         * @param leftItem The left item in the combine slot of the anvilGUI
-         * @param rightItem The right item in the combine slot of the anvilGUI
+         *
+         * @param leftItem   The left item in the combine slot of the anvilGUI
+         * @param rightItem  The right item in the combine slot of the anvilGUI
          * @param outputItem The item that would have been outputted, when the items would have been combined
-         * @param player The player that clicked the output slot
-         * @param text The text the player typed into the rename text field
+         * @param player     The player that clicked the output slot
+         * @param text       The text the player typed into the rename text field
          */
         public Completion(ItemStack leftItem, ItemStack rightItem, ItemStack outputItem, Player player, String text) {
             this.leftItem = leftItem;
